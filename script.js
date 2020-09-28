@@ -1,24 +1,31 @@
 const mysql = require('mysql');
-const MySQLEvents = require('@rodrigogs/mysql-events');
-const ora = require('ora'); // cool spinner
+const MySQLEvents = require('@rodrigogs/mysql-events'); // small library for easy watch mysql server events
+const ora = require('ora'); // cool spinner for PM2 launcher
+require('dotenv').config(); // can read .env file and variables on it
+const telegraf = require('telegraf')
 const spinner = ora({
     text: '🛸 Waiting for database events... 🛸',
     color: 'blue',
     spinner: 'dots2'
 });
 
+/*
+creating bot instance
+ */
+let bot = new Tele
+
 const getRow = async () => {
     const connection = mysql.createConnection({
-        host: '127.0.0.1',
-        user: 'root',
-        password: 'root',
-        database: 'sphouse'
+        host: process.env.DB_HOST,
+        user: process.env.DB_USERNAME,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME
     })
 
     connection.connect(function (err){
         connection.query(sql_last_row, function (err, result){
             if (err) throw err;
-            console.log(result)
+            console.log(result[0].id)
         })
     })
 
