@@ -2,7 +2,7 @@ const mysql = require('mysql');
 const MySQLEvents = require('@rodrigogs/mysql-events'); // small library for easy watch mysql server events
 const ora = require('ora'); // cool spinner for PM2 launcher
 require('dotenv').config(); // can read .env file and variables on it
-const telegraf = require('telegraf')
+const { Telegraf } = require('telegraf')
 const spinner = ora({
     text: '🛸 Waiting for database events... 🛸',
     color: 'blue',
@@ -12,9 +12,10 @@ const spinner = ora({
 /*
 creating bot instance
  */
-let bot = new Tele
+let bot = new Telegraf(process.env.BOT_TOKEN)
 
 const getRow = async () => {
+
     const connection = mysql.createConnection({
         host: process.env.DB_HOST,
         user: process.env.DB_USERNAME,
@@ -25,9 +26,21 @@ const getRow = async () => {
     connection.connect(function (err){
         connection.query(sql_last_row, function (err, result){
             if (err) throw err;
-            console.log(result[0].id)
+            console.log(result)
+            sendMessage(result[0].id)
+            return result[0].id
         })
     })
+}
+
+const sendMessage = (row) => {
+    this.row = row
+    let order = {
+        productName: row,
+        orderDate: row.created_at,
+        customerPhone: row.customer_phone,
+    }
+    bot.telegram.sendMessage(process.env.CHANNEL_NAME, row);
 
 }
 
@@ -52,11 +65,12 @@ const program = async () => {
         name: 'monitoring all statments',
         expression: 'sphouse.*', // listen to TEST database !!!
         statement: MySQLEvents.STATEMENTS.INSERT, // you can choose only insert for example MySQLEvents.STATEMENTS.INSERT, but here we are choosing everything
-        onEvent: e => {
+        onEvent: async (e) => {
             console.log(e);
             spinner.succeed('👽 _EVENT_ 👽');
             // console.log('123')
-            getRow();
+            await getRow();
+            // await sendMessage(row)
             spinner.start();
         }
     });
@@ -69,3 +83,10 @@ const program = async () => {
 program()
     .then(spinner.start.bind(spinner))
     .catch(console.error);
+
+
+// 1. Наименование товара
+// 2. Дата заказа
+// 3. Номер телефона заказчика
+// 4. Адрес доставки
+// 5. Ссылка к товару
