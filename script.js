@@ -15,7 +15,28 @@ creating bot instance
 let bot = new Telegraf(process.env.BOT_TOKEN)
 
 const getRow = async () => {
+    const connection = mysql.createConnection({
+        host: process.env.DB_HOST,
+        user: process.env.DB_USERNAME,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME
+    })
+    try {
+        connection.connect(function (err){
+            connection.query(sql_last_row, function (err, result){
+                if (err) throw err;
+                // console.log(result)
+                // sendMessage(result[0].id)
+                return result[0].id
+            })
+        })
+    } catch (err) {
+        console.log('shit happend')
+    }
 
+}
+
+let messageSelector = async (row) => {
     const connection = mysql.createConnection({
         host: process.env.DB_HOST,
         user: process.env.DB_USERNAME,
@@ -33,16 +54,33 @@ const getRow = async () => {
     })
 }
 
-const sendMessage = (row) => {
-    this.row = row
-    let order = {
-        productName: row,
-        orderDate: row.created_at,
-        customerPhone: row.customer_phone,
-    }
-    bot.telegram.sendMessage(process.env.CHANNEL_NAME, row);
+const productSelector = async (id) => {
+    let sql = ` SELECT * FROM product_translations WHERE product_id = (SELECT product_id FROM order_products WHERE id = ${id}) `
+    const connection = mysql.createConnection({
+        host: process.env.DB_HOST,
+        user: process.env.DB_USERNAME,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME
+    })
+
+    connection.connect(function (err){
+        connection.query(sql, function (err, result){
+            if (err) throw err;
+            // console.log(result)
+            // sendMessage(result[0].id)
+            return result[0].id
+        })
+    })
+}
+
+const sendMessage = async (row) => {
+    // console.log(row)
+    // this.row = row
+    // await productSelector(row.id)
+    await bot.telegram.sendMessage(process.env.CHANNEL_NAME, row);
 
 }
+
 
 let sql = 'SELECT * FROM orders'
 let sql_last_row = 'SELECT * FROM `orders` WHERE id=(SELECT MAX(id) FROM `orders`)';
@@ -69,8 +107,8 @@ const program = async () => {
             console.log(e);
             spinner.succeed('👽 _EVENT_ 👽');
             // console.log('123')
-            await getRow();
-            // await sendMessage(row)
+            let row = await getRow();
+            await sendMessage(row)
             spinner.start();
         }
     });
