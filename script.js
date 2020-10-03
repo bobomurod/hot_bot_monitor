@@ -97,9 +97,6 @@ let markdownGenerator = async (data) => {
 }
 
 const sendMessage = async (message) => {
-    // console.log(row)
-    // this.row = row
-    // await productSelector(row.id)
     console.log(message)
     await bot.telegram.sendMessage(process.env.CHANNEL_NAME, message, {parse_mode: "Markdown"});
 
@@ -109,10 +106,10 @@ let sql_last_row = 'SELECT * FROM `orders` WHERE id=(SELECT MAX(id) FROM `orders
 
 const program = async () => {
     const connection = mysql.createConnection({
-        host: '127.0.0.1',
-        user: 'root',
-        password: 'root',
-        database: 'sphouse'
+        host: process.env.DB_HOST,
+        user: process.env.DB_USERNAME,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME
     });
 
     const instance = new MySQLEvents(connection, {
@@ -128,11 +125,9 @@ const program = async () => {
         onEvent: async (e) => {
             console.log(e);
             spinner.succeed('👽 _EVENT_ 👽');
-            // console.log('123')
             // let row = await getRow(sql_last_row);
             let row = await getRow(sql_last_row)
             let collectedData = await dataCollector(row)
-            // let selectedRow = await productSelector(row)
             let readyMessage = await markdownGenerator(collectedData)
             await sendMessage(readyMessage)
             spinner.start();
