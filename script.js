@@ -91,6 +91,7 @@ let markdownGenerator = async (data) => {
 Имя **${data.customerFirstname}**\n
 Фамилия **${data.customerLastname}**\n
 [+${data.customerPhone}](tel:+${data.customerPhone})\n
+Дата **${data.orderDate}**\n
 Адрес 1 **${data.shippingAddress_1}**\n
 Адрес 2 **${data.shippingAddress_2}**`
 }
