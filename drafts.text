@@ -49,3 +49,5 @@ const productSelector = async (id) => {
         })
     })
 }
+
+Дата **${data.orderDate}**\n

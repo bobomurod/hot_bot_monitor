@@ -85,11 +85,22 @@ let productSelector = async (id) => {
     })
 }
 
-const sendMessage = async (row) => {
+let markdownGenerator = async (data) => {
+    return `**Новый заказ!**\n
+Товар **${data.productInfo.productName}**\n
+Имя **${data.customerFirstname}**\n
+Фамилия **${data.customerLastname}**\n
+[+${data.customerPhone}](tel:+${data.customerPhone})\n
+Адрес 1 **${data.shippingAddress_1}**\n
+Адрес 2 **${data.shippingAddress_2}**`
+}
+
+const sendMessage = async (message) => {
     // console.log(row)
     // this.row = row
     // await productSelector(row.id)
-    await bot.telegram.sendMessage(process.env.CHANNEL_NAME, '<b>ro1w</b>', {parse_mode: "Markdown"});
+    console.log(message)
+    await bot.telegram.sendMessage(process.env.CHANNEL_NAME, message, {parse_mode: "Markdown"});
 
 }
 
@@ -121,8 +132,8 @@ const program = async () => {
             let row = await getRow(sql_last_row)
             let collectedData = await dataCollector(row)
             // let selectedRow = await productSelector(row)
-            // let readyMessage = dataFormatter(collectedData)
-            await sendMessage(collectedData)
+            let readyMessage = await markdownGenerator(collectedData)
+            await sendMessage(readyMessage)
             spinner.start();
         }
     });
@@ -141,6 +152,19 @@ program()
 // 2. Дата заказа
 // 3. Номер телефона заказчика
 // 4. Адрес доставки
-    // 5. Ссылка к товару
+// 5. Ссылка к товару
 // <b>Новый заказ!</b>
 // <h2><h2>
+
+
+/*
+**Новый заказ!**
+Товар ⋅⋅* **${}**
+Имя ⋅⋅* **${}**
+Фамилия ⋅⋅* **${}**
+Телефон ⋅⋅* **${}**
+Дата ⋅⋅* **${}**
+Адрес 1 ⋅⋅* **${}**
+Адрес 2 ⋅⋅* **${}**
+
+ */
