@@ -3,72 +3,84 @@ const MySQLEvents = require('@rodrigogs/mysql-events'); // small library for eas
 const ora = require('ora'); // cool spinner for PM2 launcher
 require('dotenv').config(); // can read .env file and variables on it
 const { Telegraf } = require('telegraf')
+
 const spinner = ora({
     text: '🛸 Waiting for database events... 🛸',
     color: 'blue',
     spinner: 'dots2'
 });
 
+const connection = mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+})
+
+async function connect() {
+    try {
+        await new Promise((resolve, reject) => {
+            connection.connect((err => {
+                return err ? reject(err) : resolve()
+            }))
+        })
+    } catch (e) {
+        throw new Error(e)
+    }
+}
+
+connect().catch(e => console.log(e))
+
 /*
 creating bot instance
  */
 let bot = new Telegraf(process.env.BOT_TOKEN)
 
-const getRow = async () => {
-    const connection = mysql.createConnection({
-        host: process.env.DB_HOST,
-        user: process.env.DB_USERNAME,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME
-    })
-    try {
-        connection.connect(function (err){
-            connection.query(sql_last_row, function (err, result){
-                if (err) throw err;
-                // console.log(result)
-                // sendMessage(result[0].id)
-                return result[0].id
-            })
+
+let promiseGetRow = async (sql) => {
+    return new Promise((resolve, reject) => {
+        connection.query(sql    , function (err, result){
+            if (err) throw err;
+            // console.log(result[0].id)
+            // sendMessage(result[0].id)
+            resolve (result[0])
         })
-    } catch (err) {
-        console.log('shit happend')
+    })
+}
+
+let getRow = async (sql) => {
+    let result
+    try {
+        result = promiseGetRow(sql)
+    } catch (e) {
+        console.log(e)
+    }
+    return result
+}
+
+let dataCollector = async (row) => {
+    return {
+        productInfo : await productSelector(row.id),
+        orderDate: row.created_at,
+        customerFirstname: row.customer_first_name,
+        customerLastname: row.customer_last_name,
+        customerPhone: row.customer_phone,
+        shippingAddress_1: row.shipping_address_1,
+        shippingAddress_2: row.shipping_address_2,
     }
 
+
 }
 
-let messageSelector = async (row) => {
-    const connection = mysql.createConnection({
-        host: process.env.DB_HOST,
-        user: process.env.DB_USERNAME,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME
-    })
-
-    connection.connect(function (err){
-        connection.query(sql_last_row, function (err, result){
-            if (err) throw err;
-            console.log(result)
-            sendMessage(result[0].id)
-            return result[0].id
-        })
-    })
-}
-
-const productSelector = async (id) => {
+let productSelector = async (id) => {
     let sql = ` SELECT * FROM product_translations WHERE product_id = (SELECT product_id FROM order_products WHERE id = ${id}) `
-    const connection = mysql.createConnection({
-        host: process.env.DB_HOST,
-        user: process.env.DB_USERNAME,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME
-    })
-
-    connection.connect(function (err){
-        connection.query(sql, function (err, result){
-            if (err) throw err;
-            // console.log(result)
-            // sendMessage(result[0].id)
-            return result[0].id
+    return new Promise((resolve, reject) => {
+        connection.query(sql, function (err, result) {
+            if (err) reject (err);
+            resolve({
+                productName: result[0].name,
+                productDescription: result[0].description,
+            })
         })
     })
 }
@@ -77,12 +89,10 @@ const sendMessage = async (row) => {
     // console.log(row)
     // this.row = row
     // await productSelector(row.id)
-    await bot.telegram.sendMessage(process.env.CHANNEL_NAME, row);
+    await bot.telegram.sendMessage(process.env.CHANNEL_NAME, '<b>ro1w</b>', {parse_mode: "Markdown"});
 
 }
 
-
-let sql = 'SELECT * FROM orders'
 let sql_last_row = 'SELECT * FROM `orders` WHERE id=(SELECT MAX(id) FROM `orders`)';
 
 const program = async () => {
@@ -107,8 +117,12 @@ const program = async () => {
             console.log(e);
             spinner.succeed('👽 _EVENT_ 👽');
             // console.log('123')
-            let row = await getRow();
-            await sendMessage(row)
+            // let row = await getRow(sql_last_row);
+            let row = await getRow(sql_last_row)
+            let collectedData = await dataCollector(row)
+            // let selectedRow = await productSelector(row)
+            // let readyMessage = dataFormatter(collectedData)
+            await sendMessage(collectedData)
             spinner.start();
         }
     });
@@ -127,4 +141,6 @@ program()
 // 2. Дата заказа
 // 3. Номер телефона заказчика
 // 4. Адрес доставки
-// 5. Ссылка к товару
+    // 5. Ссылка к товару
+// <b>Новый заказ!</b>
+// <h2><h2>

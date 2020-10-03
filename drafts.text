@@ -1,0 +1,51 @@
+// let getRow = async (sql) => {
+//     try {
+//
+//         await connection.connect(function (err){
+//           return connection.query(sql, function (err, result){
+//                 if (err) throw err;
+//                 // console.log(result[0].id)
+//                 // sendMessage(result[0].id)
+//                 return result[0].id
+//             })
+//         })
+//     } catch (err) {
+//         console.log('shit happend')
+//     }
+//
+// }
+
+
+
+// let getRow = async (sql) => {
+//     try {
+//             let result = await connection.query(sql, function (err, result){
+//                 if (err) throw err;
+//                 console.log(result[0].id)
+//                 // sendMessage(result[0].id)
+//                 return result[0].id
+//             })
+//     } catch (err) {
+//         console.log('shit happend')
+//     }
+//
+// }
+
+const productSelector = async (id) => {
+    let sql = ` SELECT * FROM product_translations WHERE product_id = (SELECT product_id FROM order_products WHERE id = ${id}) `
+    const connection = mysql.createConnection({
+        host: process.env.DB_HOST,
+        user: process.env.DB_USERNAME,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME
+    })
+
+    connection.connect(function (err){
+        connection.query(sql, function (err, result){
+            if (err) throw err;
+            // console.log(result)
+            // sendMessage(result[0].id)
+            return result[0].id
+        })
+    })
+}
