@@ -125,7 +125,7 @@ const program = async () => {
 
     instance.addTrigger({
         name: 'monitoring all statments',
-        expression: 'sphouse.*', // listen to TEST database !!!
+        expression: `${process.env.DB_NAME}.*`, // listen to TEST database !!!
         statement: MySQLEvents.STATEMENTS.INSERT, // you can choose only insert for example MySQLEvents.STATEMENTS.INSERT, but here we are choosing everything
         onEvent: async (e) => {
             console.log(e);
