@@ -36,6 +36,14 @@ creating bot instance
  */
 let bot = new Telegraf(process.env.BOT_TOKEN)
 
+/*
+* async method just for sending message with bot
+ */
+const sendMessage = async (message) => {
+    console.log(message)
+    await bot.telegram.sendMessage(process.env.CHANNEL_NAME, message, {parse_mode: "Markdown"});
+
+}
 
 let promiseGetRow = async (sql) => {
     return new Promise((resolve, reject) => {
@@ -96,12 +104,9 @@ let markdownGenerator = async (data) => {
 Адрес 2 **${data.shippingAddress_2}**`
 }
 
-const sendMessage = async (message) => {
-    console.log(message)
-    await bot.telegram.sendMessage(process.env.CHANNEL_NAME, message, {parse_mode: "Markdown"});
-
-}
-
+/*
+* main query to get row with last entered order
+ */
 let sql_last_row = 'SELECT * FROM `orders` WHERE id=(SELECT MAX(id) FROM `orders`)';
 
 const program = async () => {
@@ -125,7 +130,6 @@ const program = async () => {
         onEvent: async (e) => {
             console.log(e);
             spinner.succeed('👽 _EVENT_ 👽');
-            // let row = await getRow(sql_last_row);
             let row = await getRow(sql_last_row)
             let collectedData = await dataCollector(row)
             let readyMessage = await markdownGenerator(collectedData)
@@ -136,31 +140,12 @@ const program = async () => {
 
     instance.on(MySQLEvents.EVENTS.CONNECTION_ERROR, console.error);
     instance.on(MySQLEvents.EVENTS.ZONGJI_ERROR, console.error);
-    // instance.on(MySQLEvents.STATEMENTS.INSERT, console.log('inserted new row'))
 };
 
+/*
+* Start script
+ */
 program()
     .then(spinner.start.bind(spinner))
     .catch(console.error);
 
-
-// 1. Наименование товара
-// 2. Дата заказа
-// 3. Номер телефона заказчика
-// 4. Адрес доставки
-// 5. Ссылка к товару
-// <b>Новый заказ!</b>
-// <h2><h2>
-
-
-/*
-**Новый заказ!**
-Товар ⋅⋅* **${}**
-Имя ⋅⋅* **${}**
-Фамилия ⋅⋅* **${}**
-Телефон ⋅⋅* **${}**
-Дата ⋅⋅* **${}**
-Адрес 1 ⋅⋅* **${}**
-Адрес 2 ⋅⋅* **${}**
-
- */
